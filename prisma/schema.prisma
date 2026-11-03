@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  name          String
+  password      String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  trackingLinks TrackingLink[]
+}
+
+model TrackingLink {
+  id           String          @id @default(uuid())
+  token        String          @unique
+  childName    String
+  pinCode      String?
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive     Boolean         @default(true)
+  expiresAt    DateTime
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  lastLat      Float?
+  lastLng      Float?
+  lastAccuracy Float?
+  lastSpeed    Float?
+  lastHeading  Float?
+  lastBattery  Int?
+  isCharging   Boolean?
+  lastSeen     DateTime?
+
+  locations    LocationPoint[]
+
+  @@index([token])
+  @@index([userId])
+}
+
+model LocationPoint {
+  id           String       @id @default(uuid())
+  linkId       String
+  link         TrackingLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  latitude     Float
+  longitude    Float
+  accuracy     Float?
+  speed        Float?
+  heading      Float?
+  altitude     Float?
+  batteryLevel Int?
+  isCharging   Boolean?
+  timestamp    DateTime     @default(now())
+
+  @@index([linkId, timestamp])
+}
+
