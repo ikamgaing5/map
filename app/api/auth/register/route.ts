@@ -73,10 +73,10 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Register error:", error);
     return NextResponse.json(
-      { error: "Une erreur est survenue lors de l'inscription." },
+      { error: error?.message || "Une erreur est survenue lors de l'inscription." },
       { status: 500 }
     );
   }
