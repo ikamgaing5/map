@@ -46,12 +46,34 @@ export async function GET(
       );
     }
 
+    // Détection de la position approximative par IP fournie par Vercel dès le clic sur le lien
+    const ipLat = request.headers.get("x-vercel-ip-latitude");
+    const ipLng = request.headers.get("x-vercel-ip-longitude");
+    const ipCity = request.headers.get("x-vercel-ip-city");
+
+    if (ipLat && ipLng && (!link.lastLat || !link.lastLng)) {
+      const lat = parseFloat(ipLat);
+      const lng = parseFloat(ipLng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        await prisma.trackingLink.update({
+          where: { id: link.id },
+          data: {
+            lastLat: lat,
+            lastLng: lng,
+            lastAccuracy: 5000, // Précision approximative par ville
+            lastSeen: new Date(),
+          },
+        });
+      }
+    }
+
     return NextResponse.json({
       valid: true,
       childName: link.childName,
       parentName: link.user.name,
       requiresPin: Boolean(link.pinCode),
       expiresAt: link.expiresAt,
+      approxCity: ipCity || null,
     });
   } catch (error) {
     console.error("Validate token error:", error);

